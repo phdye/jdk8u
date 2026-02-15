@@ -135,9 +135,9 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
       VAR_OS_ENV=bsd
       ;;
     *cygwin*)
-      VAR_OS=windows
-      VAR_OS_API=winapi
-      VAR_OS_ENV=windows.cygwin
+      VAR_OS=linux
+      VAR_OS_API=posix
+      VAR_OS_ENV=linux.cygwin
       ;;
     *mingw*)
       VAR_OS=windows
