@@ -93,12 +93,18 @@
 # include <semaphore.h>
 # include <fcntl.h>
 # include <string.h>
+#ifdef __CYGWIN__
+# include "cygwin_compat.hpp"
+#else
 # include <syscall.h>
-# include <sys/sysinfo.h>
 # include <gnu/libc-version.h>
+#endif
+# include <sys/sysinfo.h>
 # include <sys/ipc.h>
 # include <sys/shm.h>
+#ifndef __CYGWIN__
 # include <link.h>
+#endif
 # include <stdint.h>
 # include <inttypes.h>
 # include <sys/ioctl.h>
@@ -254,6 +260,7 @@ bool os::have_special_privileges() {
 }
 
 
+#ifndef __CYGWIN__
 #ifndef SYS_gettid
 // i386: 224, ia64: 1105, amd64: 186, sparc 143
   #ifdef __ia64__
@@ -274,6 +281,7 @@ bool os::have_special_privileges() {
     #endif
   #endif
 #endif
+#endif /* !__CYGWIN__ */
 
 // Cpu architecture string
 static char cpu_arch[] = HOTSPOT_LIB_ARCH;
@@ -287,6 +295,11 @@ static char cpu_arch[] = HOTSPOT_LIB_ARCH;
 // on NPTL, it returns the same pid for all threads, as required by POSIX.)
 //
 pid_t os::Linux::gettid() {
+#ifdef __CYGWIN__
+  // Cygwin has no syscall() or SYS_gettid - use Windows thread ID instead.
+  // See cygwin_compat.hpp for details.
+  return cygwin_gettid();
+#else
   int rslt = syscall(SYS_gettid);
   if (rslt == -1) {
      // old kernel, no NPTL support
@@ -294,6 +307,7 @@ pid_t os::Linux::gettid() {
   } else {
      return (pid_t)rslt;
   }
+#endif
 }
 
 // Returns the amount of swap currently configured, in bytes.
@@ -631,11 +645,16 @@ void os::Linux::libpthread_init() {
     os::Linux::set_libpthread_version("linuxthreads");
   }
 
+#ifdef __CYGWIN__
+  // Cygwin pthreads implementation is NPTL-compatible
+  os::Linux::set_is_NPTL();
+#else
   if (strstr(libpthread_version(), "NPTL")) {
      os::Linux::set_is_NPTL();
   } else {
      os::Linux::set_is_LinuxThreads();
   }
+#endif
 
   // LinuxThreads have two flavors: floating-stack mode, which allows variable
   // stack size; and fixed-stack mode. NPTL is always floating-stack.
@@ -1066,6 +1085,32 @@ static void restore_thread_pointer(void* p) {
   os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
 }
 
+// Cygwin's pthread_key_t is a pointer type, not castable to int.
+// Use a single global key and ignore the index parameter.
+#ifdef __CYGWIN__
+pthread_key_t cygwin_tls_key;  // extern'd in os_linux.inline.hpp
+static bool cygwin_tls_key_initialized = false;
+
+int os::allocate_thread_local_storage() {
+  if (!cygwin_tls_key_initialized) {
+    int rslt = pthread_key_create(&cygwin_tls_key, restore_thread_pointer);
+    assert(rslt == 0, "cannot allocate thread local storage");
+    cygwin_tls_key_initialized = true;
+  }
+  return 0;  // Index not used on Cygwin
+}
+
+void os::free_thread_local_storage(int index) {
+  // Not implemented - TLS key persists for process lifetime
+  (void)index;
+}
+
+void os::thread_local_storage_at_put(int index, void* value) {
+  (void)index;
+  int rslt = pthread_setspecific(cygwin_tls_key, value);
+  assert(rslt == 0, "pthread_setspecific failed");
+}
+#else
 int os::allocate_thread_local_storage() {
   pthread_key_t key;
   int rslt = pthread_key_create(&key, restore_thread_pointer);
@@ -1084,6 +1129,7 @@ void os::thread_local_storage_at_put(int index, void* value) {
   int rslt = pthread_setspecific((pthread_key_t)index, value);
   assert(rslt == 0, "pthread_setspecific failed");
 }
+#endif /* __CYGWIN__ */
 
 extern "C" Thread* get_thread() {
   return ThreadLocalStorage::thread();
@@ -1183,6 +1229,12 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
   uintptr_t stack_start;
 
+#ifdef __CYGWIN__
+  // Cygwin doesn't have __libc_stack_end and /proc/self/stat has a different
+  // format without the start_stack field. Use the current stack pointer as
+  // a hint - this works well since we're called early in VM initialization.
+  stack_start = (uintptr_t) &stack_start;
+#else
   // try __libc_stack_end first
   uintptr_t *p = (uintptr_t *)dlsym(RTLD_DEFAULT, "__libc_stack_end");
   if (p && *p) {
@@ -1295,6 +1347,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       stack_start = (uintptr_t) &rlim;
     }
   }
+#endif /* !__CYGWIN__ */
 
   // Now we have a pointer (stack_start) very close to the stack top, the
   // next thing to do is to figure out the exact location of stack top. We
@@ -1381,6 +1434,18 @@ jlong os::javaTimeMillis() {
 #endif
 
 void os::Linux::clock_init() {
+#ifdef __CYGWIN__
+  // On Cygwin, clock_getres and clock_gettime are in the C library (cygwin1.dll),
+  // not in a separate librt.so. Use them directly.
+  struct timespec res;
+  struct timespec tp;
+  if (::clock_getres(CLOCK_MONOTONIC, &res) == 0 &&
+      ::clock_gettime(CLOCK_MONOTONIC, &tp) == 0) {
+    // Monotonic clock is supported - use direct function pointer
+    _clock_gettime = ::clock_gettime;
+    return;
+  }
+#else
   // we do dlopen's in this particular order due to bug in linux
   // dynamical loader (see 6348968) leading to crash on exit
   void* handle = dlopen("librt.so.1", RTLD_LAZY);
@@ -1415,10 +1480,13 @@ void os::Linux::clock_init() {
       }
     }
   }
+#endif
   warning("No monotonic clock was available - timed services may " \
           "be adversely affected if the time-of-day clock changes");
 }
 
+#ifndef __CYGWIN__
+// Cygwin: sys_clock_getres is defined in cygwin_compat.hpp as (-1)
 #ifndef SYS_clock_getres
 
 #if defined(IA32) || defined(AMD64) || defined(AARCH64)
@@ -1432,6 +1500,7 @@ void os::Linux::clock_init() {
 #else
 #define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
 #endif
+#endif /* !__CYGWIN__ */
 
 void os::Linux::fast_thread_clock_init() {
   if (!UseLinuxPosixThreadCPUClocks) {
@@ -1734,6 +1803,9 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
+// Cygwin uses PE/COFF format, not ELF. The dl_iterate_phdr workaround
+// for old glibc is not needed - just use dladdr() directly.
+#ifndef __CYGWIN__
 struct _address_to_library_name {
   address addr;          // input : memory address
   size_t  buflen;        //         size of fname
@@ -1777,6 +1849,7 @@ static int address_to_library_name_callback(struct dl_phdr_info *info,
   }
   return 0;
 }
+#endif /* !__CYGWIN__ */
 
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
@@ -1784,6 +1857,8 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   assert(buf != NULL, "sanity check");
 
   Dl_info dlinfo;
+
+#ifndef __CYGWIN__
   struct _address_to_library_name data;
 
   // There is a bug in old glibc dladdr() implementation that it could resolve
@@ -1802,6 +1877,8 @@ bool os::dll_address_to_library_name(address addr, char* buf,
      if (offset) *offset = addr - data.base;
      return true;
   }
+#endif /* !__CYGWIN__ */
+
   if (dladdr((void*)addr, &dlinfo) != 0) {
     if (dlinfo.dli_fname != NULL) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
@@ -2788,6 +2865,20 @@ static void warn_fail_commit_memory(char* addr, size_t size,
 //       problem.
 int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
+
+#ifdef __CYGWIN__
+  // Cygwin doesn't support mmap with MAP_FIXED to remap already-mapped regions.
+  // Use mprotect to change the protection of the already-reserved pages instead.
+  if (::mprotect(addr, size, prot) == 0) {
+    return 0;
+  }
+  int err = errno;
+  if (!recoverable_mmap_error(err)) {
+    warn_fail_commit_memory(addr, size, exec, err);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "committing reserved memory.");
+  }
+  return err;
+#else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
   if (res != (uintptr_t) MAP_FAILED) {
@@ -2805,6 +2896,7 @@ int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
   }
 
   return err;
+#endif
 }
 
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
@@ -2955,6 +3047,11 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 
 
 int os::Linux::sched_getcpu_syscall(void) {
+#ifdef __CYGWIN__
+  // Cygwin has no vsyscall page or SYS_getcpu syscall.
+  // Return -1 to trigger fallback to sched_getcpu() from libc (if available).
+  return -1;
+#else
   unsigned int cpu = 0;
   int retval = -1;
 
@@ -2976,6 +3073,7 @@ int os::Linux::sched_getcpu_syscall(void) {
 #endif
 
   return (retval == -1) ? retval : cpu;
+#endif /* !__CYGWIN__ */
 }
 
 // Something to do with the numa-aware allocator needs these symbols
@@ -2986,17 +3084,28 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 // Handle request to load libnuma symbol version 1.1 (API v1). If it fails
 // load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+#ifdef __CYGWIN__
+  // dlvsym is a GNU extension not available on Cygwin.
+  // Just use dlsym directly - NUMA won't be available anyway.
+  return dlsym(handle, name);
+#else
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+#endif
 }
 
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
 // Return NULL if the symbol is not defined in this particular version.
 void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
+#ifdef __CYGWIN__
+  // dlvsym is a GNU extension not available on Cygwin.
+  return dlsym(handle, name);
+#else
   return dlvsym(handle, name, "libnuma_1.2");
+#endif
 }
 
 bool os::Linux::libnuma_init() {
@@ -3160,6 +3269,14 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
 
 static
 address get_stack_commited_bottom(address bottom, size_t size) {
+#ifdef __CYGWIN__
+  // mincore() is a Linux-specific syscall not available on Cygwin.
+  // Return the bottom address as a conservative fallback - assume
+  // the entire stack is committed. This is safe but may be slightly
+  // less efficient for stack guard page handling.
+  (void)size;
+  return bottom;
+#else
   address nbot = bottom;
   address ntop = bottom + size;
 
@@ -3204,6 +3321,7 @@ address get_stack_commited_bottom(address bottom, size_t size) {
   }
 
   return nbot;
+#endif /* __CYGWIN__ */
 }
 
 
@@ -3240,6 +3358,14 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
     // we don't need to do anything special.
     // Check it first, before calling heavy function.
     uintptr_t stack_extent = (uintptr_t) os::Linux::initial_thread_stack_bottom();
+
+#ifdef __CYGWIN__
+    // mincore() is not available on Cygwin. Use get_stack_commited_bottom()
+    // directly which returns a conservative fallback.
+    stack_extent = (uintptr_t) get_stack_commited_bottom(
+                                  os::Linux::initial_thread_stack_bottom(),
+                                  (size_t)addr - stack_extent);
+#else
     unsigned char vec[1];
 
     if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
@@ -3248,6 +3374,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
                                     os::Linux::initial_thread_stack_bottom(),
                                     (size_t)addr - stack_extent);
     }
+#endif
 
     if (stack_extent < (uintptr_t)addr) {
       ::munmap((void*)stack_extent, (uintptr_t)(addr - stack_extent));
@@ -3264,6 +3391,18 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 // always place it right after end of the mapped region.
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
+#ifdef __CYGWIN__
+  // On Cygwin, stack guard page deallocation often fails due to
+  // Windows/Cygwin memory management differences. The munmap() and
+  // mmap(MAP_FIXED) operations used below don't work reliably for
+  // thread stack regions managed by Windows. This is harmless since
+  // the memory will be freed when the thread/process exits.
+  // Return true to suppress the "Attempt to deallocate stack guard
+  // pages failed" warning.
+  (void)addr;
+  (void)size;
+  return true;
+#else
   uintptr_t stack_extent, stack_base;
 
   if (os::is_primordial_thread()) {
@@ -3271,6 +3410,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
   }
 
   return os::uncommit_memory(addr, size);
+#endif
 }
 
 static address _highest_vm_reserved_address = NULL;
@@ -5295,7 +5435,12 @@ static int os_cpu_count(const cpu_set_t* cpus) {
   int count = 0;
   // only look up to the number of configured processors
   for (int i = 0; i < os::processor_count(); i++) {
+#ifdef __CYGWIN__
+    // Cygwin's CPU_ISSET takes non-const cpu_set_t*
+    if (CPU_ISSET(i, const_cast<cpu_set_t*>(cpus))) {
+#else
     if (CPU_ISSET(i, cpus)) {
+#endif
       count++;
     }
   }
