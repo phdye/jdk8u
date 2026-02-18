@@ -24,9 +24,14 @@
 
 # Rules to build signal interposition library, used by vm.make
 
-# libjsig.so: signal interposition library
+# libjsig: signal interposition library
 JSIG = jsig
+# Cygwin uses .dll suffix for shared libraries
+ifeq ($(_IS_CYGWIN),)
 LIBJSIG = lib$(JSIG).so
+else
+LIBJSIG = lib$(JSIG).dll
+endif
 
 LIBJSIG_DEBUGINFO   = lib$(JSIG).debuginfo
 LIBJSIG_DIZ         = lib$(JSIG).diz

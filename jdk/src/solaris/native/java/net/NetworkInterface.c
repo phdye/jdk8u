@@ -32,7 +32,14 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#ifndef __CYGWIN__
 #include <net/if_arp.h>
+#endif
+
+#if defined(__CYGWIN__)
+#include <sys/ioctl.h>
+#include <ifaddrs.h>
+#endif
 
 #if defined(__solaris__)
 #include <sys/dlpi.h>
@@ -71,7 +78,7 @@
 #include "jni_util.h"
 #include "net_util.h"
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
     #define _PATH_PROCNET_IFINET6 "/proc/net/if_inet6"
 #elif defined(__solaris__)
     #ifndef SIOCGLIFHWADDR
@@ -1106,7 +1113,7 @@ static int openSocket(JNIEnv *env, int proto) {
 }
 
 /** Linux **/
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
 
 #if defined(AF_INET6)
 /*

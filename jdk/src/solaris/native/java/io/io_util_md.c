@@ -39,8 +39,12 @@
 #include <sys/filio.h>
 #endif
 
-#if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
+#if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX) || defined(__CYGWIN__)
 #include <sys/ioctl.h>
+#endif
+
+#ifdef __CYGWIN__
+#include <asm/socket.h>  /* for FIONREAD */
 #endif
 
 #ifdef MACOSX

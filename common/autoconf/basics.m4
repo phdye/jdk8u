@@ -442,6 +442,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   else
     PATH_SEP=":"
   fi
+  # Cygwin-native port: boot JDK is Windows-native and needs ";" separator
+  if test "x$OPENJDK_TARGET_OS_ENV" = "xlinux.cygwin"; then
+    PATH_SEP=";"
+  fi
   AC_SUBST(PATH_SEP)
 
   # We get the top-level directory from the supporting wrappers.

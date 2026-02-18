@@ -32,16 +32,21 @@
 #include "sun_nio_ch_NativeThread.h"
 #include "nio_util.h"
 
-#ifdef __linux__
+#ifdef __CYGWIN__
+  #include <pthread.h>
+  #include <signal.h>
+  /* Cygwin uses SIGRTMAX like BSD */
+  #define INTERRUPT_SIGNAL (SIGRTMAX - 2)
+#elif defined(__linux__)
   #include <pthread.h>
   #include <sys/signal.h>
   /* Also defined in net/linux_close.c */
   #define INTERRUPT_SIGNAL (__SIGRTMAX - 2)
-#elif __solaris__
+#elif defined(__solaris__)
   #include <thread.h>
   #include <signal.h>
   #define INTERRUPT_SIGNAL (SIGRTMAX - 2)
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
   #include <pthread.h>
   #include <signal.h>
   /* Also defined in net/bsd_close.c */

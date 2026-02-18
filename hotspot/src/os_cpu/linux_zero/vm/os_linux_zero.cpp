@@ -305,7 +305,13 @@ size_t os::Linux::default_stack_size(os::ThreadType thr_type) {
 size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
   // Only enable glibc guard pages for non-Java threads
   // (Java threads have HotSpot guard pages)
+#ifdef __CYGWIN__
+  // Cygwin's pthread_create fails with EAGAIN when guard_size=0.
+  // Always use a guard page on Cygwin.
+  return page_size();
+#else
   return (thr_type == java_thread ? 0 : page_size());
+#endif
 }
 
 static void current_stack_region(address *bottom, size_t *size) {

@@ -67,7 +67,12 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 endif # OPENJDK_TARGET_OS windows
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  EXTRA_SOUND_JNI_LIBS += jsoundalsa
+  # Cygwin doesn't have ALSA
+  ifneq ($(findstring cygwin, $(OPENJDK_TARGET_OS_ENV)),)
+    # Skip ALSA on Cygwin
+  else
+    EXTRA_SOUND_JNI_LIBS += jsoundalsa
+  endif
   LIBJSOUND_CFLAGS += -DX_PLATFORM=X_LINUX
 endif # OPENJDK_TARGET_OS linux
 

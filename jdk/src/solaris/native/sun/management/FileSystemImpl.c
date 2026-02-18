@@ -30,7 +30,7 @@
 #include "jni_util.h"
 #include "sun_management_FileSystemImpl.h"
 
-#ifdef _ALLBSD_SOURCE
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
 #define stat64 stat
 #endif
 

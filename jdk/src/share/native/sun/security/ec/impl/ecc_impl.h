@@ -50,7 +50,13 @@ extern "C" {
 /*
  * Multi-platform definitions
  */
-#ifdef __linux__
+#ifdef __CYGWIN__
+#include <stdint.h>
+#define B_FALSE FALSE
+#define B_TRUE TRUE
+typedef unsigned long ulong_t;
+typedef enum boolean { B_FALSE, B_TRUE } boolean_t;
+#elif defined(__linux__)
 #define B_FALSE FALSE
 #define B_TRUE TRUE
 typedef unsigned char uint8_t;

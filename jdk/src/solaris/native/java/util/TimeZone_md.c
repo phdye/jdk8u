@@ -73,7 +73,12 @@ static const char popularZones[][4] = {"UTC", "GMT"};
 static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
 #endif
 
-#if defined(__linux__) || defined(MACOSX) || defined(__solaris__)
+#if defined(__linux__) || defined(MACOSX) || defined(__solaris__) || defined(__CYGWIN__)
+
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
+#define dirent64 dirent
+#define readdir64_r readdir_r
+#endif
 
 /*
  * Returns a pointer to the zone ID portion of the given zoneinfo file
@@ -251,7 +256,7 @@ isFileIdentical(char *buf, size_t size, char *pathname)
     return possibleMatch;
 }
 
-#if defined(__linux__) || defined(MACOSX)
+#if defined(__linux__) || defined(MACOSX) || defined(__CYGWIN__)
 
 /*
  * Performs Linux specific mapping and returns a zone ID

@@ -69,7 +69,19 @@ typedef int sctp_peeloff_func(int sock, sctp_assoc_t id);
 
 #else /* __linux__ */
 #include <stdint.h>
+#ifndef __CYGWIN__
 #include <linux/types.h>
+#else
+/* Cygwin doesn't have linux/types.h - define kernel types */
+typedef int32_t __s32;
+typedef uint32_t __u32;
+typedef uint16_t __u16;
+typedef uint8_t __u8;
+/* Cygwin doesn't have MSG_FIN */
+#ifndef MSG_FIN
+#define MSG_FIN 0x200
+#endif
+#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "jni.h"

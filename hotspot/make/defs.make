@@ -176,6 +176,16 @@ else
   endif
 endif
 
+# Cygwin-native port: Override Windows_NT environment variable
+# Cygwin inherits OS=Windows_NT from Windows, but we want to build as Linux
+ifeq ($(OS), Windows_NT)
+  _UNAME_S := $(shell uname -s)
+  ifneq ($(findstring CYGWIN,$(_UNAME_S)),)
+    OS := Linux
+    HOST := $(shell uname -n)
+  endif
+endif
+
 # Windows should have OS predefined
 ifeq ($(OS),)
   OS   := $(shell uname -s)
@@ -184,6 +194,10 @@ ifeq ($(OS),)
   endif
   ifeq ($(OS), Darwin)
     OS=bsd
+  endif
+  # Cygwin-native port: treat Cygwin as Linux
+  ifneq ($(findstring CYGWIN,$(OS)),)
+    OS=Linux
   endif
   HOST := $(shell uname -n)
 endif

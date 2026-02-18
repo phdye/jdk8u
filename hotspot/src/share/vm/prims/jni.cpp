@@ -234,7 +234,7 @@ bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
 
 
 intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
-  if (offset <= small_offset_mask) {
+  if (offset >= 0 && (uintptr_t)offset <= small_offset_mask) {
     Klass* field_klass = k;
     Klass* super_klass = field_klass->super();
     // With compressed oops the most super class with nonstatic fields would
@@ -262,7 +262,7 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
 
 bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
   uintptr_t as_uint = (uintptr_t) id;
-  intptr_t klass_hash = (as_uint >> klass_shift) & klass_mask;
+  uintptr_t klass_hash = (as_uint >> klass_shift) & klass_mask;
   do {
     debug_only(No_Safepoint_Verifier nosafepoint;)
     // Could use a non-blocking query for identity_hash here...

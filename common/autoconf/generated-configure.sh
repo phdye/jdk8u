@@ -5016,7 +5016,7 @@ VS_TOOLSET_SUPPORTED_2022=true
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1771154219
+DATE_WHEN_GENERATED=1771399840
 
 ###############################################################################
 #
@@ -15858,6 +15858,10 @@ printf "%s\n" "$as_me: WARNING: It seems that your find utility is non-standard.
 
   else
     PATH_SEP=":"
+  fi
+  # Cygwin-native port: boot JDK is Windows-native and needs ";" separator
+  if test "x$OPENJDK_TARGET_OS_ENV" = "xlinux.cygwin"; then
+    PATH_SEP=";"
   fi
 
 
@@ -27978,6 +27982,11 @@ printf "%s\n" "$as_me: Valid toolchains: $VALID_TOOLCHAINS." >&6;}
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       SHARED_LIBRARY='lib$1.dylib'
       SHARED_LIBRARY_SUFFIX='.dylib'
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xlinux.cygwin; then
+      # Cygwin uses .dll for shared libraries
+      SHARED_LIBRARY='lib$1.dll'
+      SHARED_LIBRARY_SUFFIX='.dll'
+      EXE_SUFFIX='.exe'
     fi
   fi
 
@@ -44904,6 +44913,13 @@ printf "%s\n" "$ac_cv_c_bigendian" >&6; }
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE=''
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xlinux.cygwin; then
+      # Cygwin doesn't support -z flag
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -44924,6 +44940,13 @@ printf "%s\n" "$ac_cv_c_bigendian" >&6; }
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE=''
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xlinux.cygwin; then
+      # Cygwin doesn't support -z flag
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -45137,7 +45160,8 @@ printf "%s\n" "$ac_cv_c_bigendian" >&6; }
     LEGACY_TARGET_CFLAGS="$LEGACY_TARGET_CFLAGS -fstack-protector"
     LEGACY_HOST_CXXFLAGS="$LEGACY_HOST_CXXFLAGS -fstack-protector"
     LEGACY_TARGET_CXXFLAGS="$LEGACY_TARGET_CXXFLAGS -fstack-protector"
-    if test "x$OPENJDK_TARGET_OS" != xmacosx; then
+    # -z,relro is ELF-specific; skip for macOS and Cygwin (PE/COFF format)
+    if test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_OS_ENV" != "xlinux.cygwin"; then
       LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,relro"
       LEGACY_HOST_LDFLAGS="$LEGACY_HOST_LDFLAGS -Wl,-z,relro"
       LEGACY_TARGET_LDFLAGS="$LEGACY_TARGET_LDFLAGS -Wl,-z,relro"
@@ -45954,10 +45978,11 @@ printf "%s\n" "$supports" >&6; }
       if test -n "$HAS_GNU_HASH"; then
         LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both "
       fi
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_OS_ENV" != "xlinux.cygwin"; then
         # And since we now know that the linker is gnu, then add:
         #   -z defs, to forbid undefined symbols in object files
         #   -z noexecstack, to mark stack regions as non-executable
+        # (Skip on Cygwin - ld doesn't support -z flag for PE/COFF)
         LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs -Xlinker -z -Xlinker noexecstack"
         if test "x$DEBUG_LEVEL" = "xrelease"; then
           # When building release libraries, tell the linker optimize them.

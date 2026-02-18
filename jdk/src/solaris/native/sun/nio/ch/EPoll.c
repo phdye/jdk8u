@@ -31,6 +31,7 @@
 
 #include "sun_nio_ch_EPoll.h"
 
+#ifndef __CYGWIN__
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -101,3 +102,55 @@ Java_sun_nio_ch_EPoll_close0(JNIEnv *env, jclass c, jint epfd) {
     int res;
     RESTARTABLE(close(epfd), res);
 }
+
+#else /* __CYGWIN__ - epoll not available, provide stubs */
+
+#include <unistd.h>
+#include <errno.h>
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPoll_eventSize(JNIEnv* env, jclass this)
+{
+    return 12;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPoll_eventsOffset(JNIEnv* env, jclass this)
+{
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPoll_dataOffset(JNIEnv* env, jclass this)
+{
+    return 4;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPoll_epollCreate(JNIEnv *env, jclass c) {
+    JNU_ThrowIOException(env, "epoll not supported on Cygwin");
+    return -1;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPoll_epollCtl(JNIEnv *env, jclass c, jint epfd,
+                                   jint opcode, jint fd, jint events)
+{
+    return ENOSYS;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPoll_epollWait(JNIEnv *env, jclass c,
+                                    jint epfd, jlong address, jint numfds)
+{
+    JNU_ThrowIOException(env, "epoll not supported on Cygwin");
+    return -1;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_EPoll_close0(JNIEnv *env, jclass c, jint epfd) {
+    int res;
+    RESTARTABLE(close(epfd), res);
+}
+
+#endif /* __CYGWIN__ */

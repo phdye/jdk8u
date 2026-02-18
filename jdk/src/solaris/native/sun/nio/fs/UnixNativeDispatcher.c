@@ -42,12 +42,14 @@
 #include <strings.h>
 #endif
 
-#if defined(__linux__) || defined(_AIX)
+#if defined(__linux__) || defined(_AIX) || defined(__CYGWIN__)
 #include <string.h>
 #endif
 
-#ifdef _ALLBSD_SOURCE
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
+#ifndef _ALLBSD_SOURCE
 #include <string.h>
+#endif
 
 #define stat64 stat
 #define statvfs64 statvfs

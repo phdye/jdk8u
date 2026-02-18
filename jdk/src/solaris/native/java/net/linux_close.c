@@ -59,7 +59,11 @@ typedef struct {
 /*
  * Signal to unblock thread
  */
+#ifdef __CYGWIN__
+static int sigWakeup = (SIGRTMAX - 2);
+#else
 static int sigWakeup = (__SIGRTMAX - 2);
+#endif
 
 /*
  * fdTable holds one entry per file descriptor, up to a certain

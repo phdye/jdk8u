@@ -127,6 +127,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       SHARED_LIBRARY='lib[$]1.dylib'
       SHARED_LIBRARY_SUFFIX='.dylib'
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xlinux.cygwin; then
+      # Cygwin uses .dll for shared libraries
+      SHARED_LIBRARY='lib[$]1.dll'
+      SHARED_LIBRARY_SUFFIX='.dll'
+      EXE_SUFFIX='.exe'
     fi
   fi
 

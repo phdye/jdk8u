@@ -128,7 +128,11 @@ ASFLAGS += $(EXTRA_ASFLAGS)
 
 # Don't set excutable bit on stack segment
 # the same could be done by separate execstack command
+# Cygwin's linker doesn't support -z flag
+_IS_CYGWIN := $(findstring CYGWIN,$(shell uname -s))
+ifeq ($(_IS_CYGWIN),)
 LFLAGS += -Xlinker -z -Xlinker noexecstack
+endif
 
 LIBS += -lm -ldl -lpthread
 
@@ -145,7 +149,12 @@ include $(MAKEFILES_DIR)/dtrace.make
 # JVM
 
 JVM      = jvm
+# Cygwin uses .dll suffix for shared libraries
+ifeq ($(_IS_CYGWIN),)
 LIBJVM   = lib$(JVM).so
+else
+LIBJVM   = lib$(JVM).dll
+endif
 
 LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
 LIBJVM_DIZ         = lib$(JVM).diz
@@ -358,7 +367,10 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifneq ($(STRIP_POLICY),no_strip)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
+    # Cygwin's objcopy places .gnu_debuglink section at invalid VMA, causing DLL load failure
+    ifeq ($(_IS_CYGWIN),)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+    endif
   endif
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@

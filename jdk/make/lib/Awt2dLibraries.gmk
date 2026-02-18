@@ -972,7 +972,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
         $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_SUFFIX := $(BUILD_LIBFONTMANAGER_FONTLIB), \
-    LDFLAGS_SUFFIX_linux := -lawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc, \
+    LDFLAGS_SUFFIX_linux := -lawt -lawt_xawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc, \
     LDFLAGS_SUFFIX_solaris := -lawt -lawt_headless -lc $(LIBM) $(LIBCXX) -ljava -ljvm, \
     LDFLAGS_SUFFIX_aix := -lawt -lawt_headless $(LIBM) $(LIBCXX) -ljava -ljvm,\
     LDFLAGS_SUFFIX_macosx := -lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup \
@@ -988,6 +988,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
+
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_XAWT)
+endif
 
 ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
   $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
@@ -1249,7 +1253,7 @@ ifndef BUILD_HEADLESS_ONLY
   else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
   else
-    LIBSPLASHSCREEN_LDFLAGS_SUFFIX += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread
+    LIBSPLASHSCREEN_LDFLAGS_SUFFIX += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread -liconv
   endif
 
   $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN, \

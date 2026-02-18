@@ -966,7 +966,7 @@ class CompressedLineNumberWriteStream: public CompressedWriteStream {
 // so we force it to call through the non-optimized version in the .cpp.
 // It's gross, but it's the only way we can ensure that all callers are
 // fixed.  _MSC_VER is defined by the windows compiler
-#if defined(_M_AMD64) && _MSC_VER >= 1400
+#if defined(_M_AMD64) && defined(_MSC_VER) && _MSC_VER >= 1400
   void write_pair(int bci, int line);
 #else
   void write_pair(int bci, int line) { write_pair_inline(bci, line); }

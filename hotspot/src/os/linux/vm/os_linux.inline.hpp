@@ -36,8 +36,19 @@
 #include <sys/poll.h>
 #include <netdb.h>
 
+// Cygwin TLS key - declared in os_linux.cpp
+#ifdef __CYGWIN__
+extern pthread_key_t cygwin_tls_key;
+#endif
+
 inline void* os::thread_local_storage_at(int index) {
+#ifdef __CYGWIN__
+  // Cygwin uses a static key, index is ignored
+  (void)index;
+  return pthread_getspecific(cygwin_tls_key);
+#else
   return pthread_getspecific((pthread_key_t)index);
+#endif
 }
 
 inline const char* os::file_separator() {

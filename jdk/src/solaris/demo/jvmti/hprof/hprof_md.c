@@ -307,9 +307,17 @@ md_get_prelude_path(char *path, int path_len, char *filename)
     /* Use dladdr() to get the full path to libhprof.so, which we use to find
      *  the prelude file.
      */
+#ifdef __CYGWIN__
+    dlinfo.dli_fname[0] = '\0';
+#else
     dlinfo.dli_fname = NULL;
+#endif
     (void)dladdr(addr, &dlinfo);
+#ifdef __CYGWIN__
+    if ( dlinfo.dli_fname[0] != '\0' ) {
+#else
     if ( dlinfo.dli_fname != NULL ) {
+#endif
         char * lastSlash;
 
         /* Full path to library name, need to move up one directory to 'lib' */

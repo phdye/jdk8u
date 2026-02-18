@@ -29,6 +29,7 @@
 #include <dlfcn.h>
 #include <cups/cups.h>
 #include <cups/ppd.h>
+#include <string.h>
 
 //#define CUPS_DEBUG
 

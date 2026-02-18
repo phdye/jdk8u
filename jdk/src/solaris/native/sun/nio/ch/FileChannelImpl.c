@@ -30,13 +30,22 @@
 #include <unistd.h>
 
 #if defined(__linux__) || defined(__solaris__)
+#ifndef __CYGWIN__
 #include <sys/sendfile.h>
+#endif
 #elif defined(_AIX)
 #include <sys/socket.h>
 #elif defined(_ALLBSD_SOURCE)
 #include <sys/socket.h>
 #include <sys/uio.h>
 
+#define lseek64 lseek
+#define mmap64 mmap
+#endif
+
+#if defined(__CYGWIN__)
+#include <sys/socket.h>
+#include <sys/uio.h>
 #define lseek64 lseek
 #define mmap64 mmap
 #endif

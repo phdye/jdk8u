@@ -25,6 +25,10 @@
 #ifndef OS_LINUX_VM_OS_LINUX_HPP
 #define OS_LINUX_VM_OS_LINUX_HPP
 
+#ifdef __CYGWIN__
+#include "cygwin_compat.hpp"
+#endif
+
 // Linux_OS defines the interface to Linux operating systems
 
 /* pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1 */

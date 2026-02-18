@@ -26,10 +26,15 @@ include $(GAMMADIR)/make/altsrc.make
 
 # Rules to build serviceability agent library, used by vm.make
 
-# libsaproc.so: serviceability agent
+# libsaproc: serviceability agent
 
 SAPROC = saproc
+# Cygwin uses .dll suffix for shared libraries
+ifeq ($(_IS_CYGWIN),)
 LIBSAPROC = lib$(SAPROC).so
+else
+LIBSAPROC = lib$(SAPROC).dll
+endif
 
 LIBSAPROC_DEBUGINFO   = lib$(SAPROC).debuginfo
 LIBSAPROC_DIZ         = lib$(SAPROC).diz

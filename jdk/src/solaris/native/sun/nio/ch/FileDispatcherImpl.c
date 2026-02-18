@@ -38,7 +38,7 @@
 #include <sys/ioctl.h>
 #endif
 
-#if defined(_ALLBSD_SOURCE)
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
 #define lseek64 lseek
 #define stat64 stat
 #define flock64 flock
@@ -50,6 +50,7 @@
 #define pwrite64 pwrite
 #define ftruncate64 ftruncate
 #define fstat64 fstat
+#define mmap64 mmap
 
 #define fdatasync fsync
 #endif
@@ -62,6 +63,14 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileDispatcherImpl.h"
 #include "java_lang_Long.h"
+
+/* Fix MSVC i64 suffix for GCC/Cygwin */
+#ifdef __CYGWIN__
+#undef java_lang_Long_MAX_VALUE
+#define java_lang_Long_MAX_VALUE 9223372036854775807LL
+#undef java_lang_Long_MIN_VALUE
+#define java_lang_Long_MIN_VALUE (-9223372036854775807LL - 1)
+#endif
 
 static int preCloseFD = -1;     /* File descriptor to which we dup other fd's
                                    before closing them for real */

@@ -33,6 +33,11 @@
 
 #include "childproc.h"
 
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
+#define dirent64 dirent
+#define readdir64 readdir
+#endif
+
 const char * const *parentPathv;
 
 ssize_t

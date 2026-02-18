@@ -149,6 +149,10 @@ CFLAGS += $(VM_PICFLAG)
 CFLAGS += -fno-rtti
 CFLAGS += -fno-exceptions
 CFLAGS += -D_REENTRANT
+# Cygwin: include compatibility header that maps *64 functions to standard POSIX
+ifeq ($(shell uname -o 2>/dev/null),Cygwin)
+  CFLAGS += -include $(GAMMADIR)/src/os/linux/vm/cygwin_compat.hpp
+endif
 ifeq ($(USE_CLANG),)
   CFLAGS += -fcheck-new
   # version 4 and above support fvisibility=hidden (matches jni_x86.h file)
@@ -236,6 +240,7 @@ CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))
 # Option only exists on GCC 7 and later, checked by configure
 ifeq ($(USE_FORMAT_OVERFLOW), 1)
   CFLAGS_WARN/os_linux.o = $(CFLAGS_WARN/DEFAULT) -Wno-error=format-overflow
+  CFLAGS_WARN/compiledIC.o = $(CFLAGS_WARN/DEFAULT) -Wno-error=nonnull
 endif
 
 # The flags to use for an Optimized g++ build
@@ -307,22 +312,25 @@ endif
 # Enable linker optimization
 LFLAGS += -Xlinker -O1
 
-ifeq ($(USE_CLANG),)
-  # If this is a --hash-style=gnu system, use --hash-style=both
-  #   The gnu .hash section won't work on some Linux systems like SuSE 10.
-  _HAS_HASH_STYLE_GNU:=$(shell $(CC) -dumpspecs | grep -- '--hash-style=gnu')
-  ifneq ($(_HAS_HASH_STYLE_GNU),)
+# Cygwin's linker doesn't support --hash-style or -z flags
+_IS_CYGWIN := $(findstring CYGWIN,$(shell uname -s))
+ifeq ($(_IS_CYGWIN),)
+  ifeq ($(USE_CLANG),)
+    # If this is a --hash-style=gnu system, use --hash-style=both
+    #   The gnu .hash section won't work on some Linux systems like SuSE 10.
+    _HAS_HASH_STYLE_GNU:=$(shell $(CC) -dumpspecs | grep -- '--hash-style=gnu')
+    ifneq ($(_HAS_HASH_STYLE_GNU),)
+      LDFLAGS_HASH_STYLE = -Wl,--hash-style=both
+    endif
+  else
+    # Don't know how to find out the 'hash style' of a system as '-dumpspecs'
+    # doesn't work for Clang. So for now we'll alwys use --hash-style=both
     LDFLAGS_HASH_STYLE = -Wl,--hash-style=both
   endif
-else
-  # Don't know how to find out the 'hash style' of a system as '-dumpspecs'
-  # doesn't work for Clang. So for now we'll alwys use --hash-style=both
-  LDFLAGS_HASH_STYLE = -Wl,--hash-style=both
+  LDFLAGS_NO_EXEC_STACK="-Wl,-z,noexecstack"
 endif
 
 LFLAGS += $(LDFLAGS_HASH_STYLE)
-
-LDFLAGS_NO_EXEC_STACK="-Wl,-z,noexecstack"
 
 # Use $(MAPFLAG:FILENAME=real_file_name) to specify a map file.
 MAPFLAG = -Xlinker --version-script=FILENAME

@@ -33,7 +33,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#ifndef __CYGWIN__
 #include <sys/inotify.h>
+#endif
 
 #include "sun_nio_fs_LinuxWatchService.h"
 
@@ -44,6 +49,8 @@ static void throwUnixException(JNIEnv* env, int errnum) {
         (*env)->Throw(env, x);
     }
 }
+
+#ifndef __CYGWIN__
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_fs_LinuxWatchService_eventSize(JNIEnv *env, jclass clazz)
@@ -101,6 +108,55 @@ Java_sun_nio_fs_LinuxWatchService_inotifyRmWatch
     if (err == -1)
         throwUnixException(env, errno);
 }
+
+#else /* __CYGWIN__ - inotify not available, provide stubs */
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_LinuxWatchService_eventSize(JNIEnv *env, jclass clazz)
+{
+    return 16; /* approximate size */
+}
+
+JNIEXPORT jintArray JNICALL
+Java_sun_nio_fs_LinuxWatchService_eventOffsets(JNIEnv *env, jclass clazz)
+{
+    jintArray result = (*env)->NewIntArray(env, 5);
+    if (result != NULL) {
+        jint arr[5];
+        arr[0] = 0;  /* wd offset */
+        arr[1] = 4;  /* mask offset */
+        arr[2] = 8;  /* cookie offset */
+        arr[3] = 12; /* len offset */
+        arr[4] = 16; /* name offset */
+        (*env)->SetIntArrayRegion(env, result, 0, 5, arr);
+    }
+    return result;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_LinuxWatchService_inotifyInit
+    (JNIEnv* env, jclass clazz)
+{
+    throwUnixException(env, ENOSYS);
+    return -1;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_LinuxWatchService_inotifyAddWatch
+    (JNIEnv* env, jclass clazz, jint fd, jlong address, jint mask)
+{
+    throwUnixException(env, ENOSYS);
+    return -1;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_LinuxWatchService_inotifyRmWatch
+    (JNIEnv* env, jclass clazz, jint fd, jint wd)
+{
+    throwUnixException(env, ENOSYS);
+}
+
+#endif /* __CYGWIN__ */
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_LinuxWatchService_configureBlocking

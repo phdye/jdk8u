@@ -23,6 +23,9 @@
  */
 
 #include "utilities/globalDefinitions.hpp"
+#ifdef __CYGWIN__
+#include "cygwin_compat.hpp"
+#endif
 #include "prims/jvm.h"
 #include "runtime/frame.inline.hpp"
 #include "runtime/os.hpp"
@@ -849,7 +852,7 @@ void os::Posix::print_siginfo_brief(outputStream* os, const siginfo_t* si) {
   } else if (sig == SIGSEGV || sig == SIGBUS || sig == SIGILL ||
              sig == SIGTRAP || sig == SIGFPE) {
     os->print(", si_addr: " PTR_FORMAT, si->si_addr);
-#ifdef SIGPOLL
+#if defined(SIGPOLL) && !defined(__CYGWIN__)
   } else if (sig == SIGPOLL) {
     os->print(", si_band: " PTR64_FORMAT, (uint64_t)si->si_band);
 #endif

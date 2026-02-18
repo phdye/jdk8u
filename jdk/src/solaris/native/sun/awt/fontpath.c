@@ -23,9 +23,9 @@
  * questions.
  */
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
 #include <string.h>
-#endif /* __linux__ */
+#endif /* __linux__ || __CYGWIN__ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>

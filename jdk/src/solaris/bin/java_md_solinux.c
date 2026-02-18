@@ -39,8 +39,14 @@
 #include "version_comp.h"
 
 
+/* Cygwin uses .dll suffix for shared libraries */
+#ifdef __CYGWIN__
+#define JVM_DLL "libjvm.dll"
+#define JAVA_DLL "libjava.dll"
+#else
 #define JVM_DLL "libjvm.so"
 #define JAVA_DLL "libjava.so"
+#endif
 #ifdef AIX
 #define LD_LIBRARY_PATH "LIBPATH"
 #else

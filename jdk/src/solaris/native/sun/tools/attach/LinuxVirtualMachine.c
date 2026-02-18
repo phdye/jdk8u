@@ -41,6 +41,10 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 
+#ifdef __CYGWIN__
+#define stat64 stat
+#endif
+
 #include "sun_tools_attach_LinuxVirtualMachine.h"
 
 #define RESTARTABLE(_cmd, _result) do { \

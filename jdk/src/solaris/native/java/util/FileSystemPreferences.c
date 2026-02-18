@@ -49,8 +49,9 @@ Java_java_util_prefs_FileSystemPreferences_chmod(JNIEnv *env,
     return (jint) result;
 }
 
-#if defined(_ALLBSD_SOURCE)
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
 typedef struct flock FLOCK;
+#define F_SETLK64 F_SETLK
 #else
 typedef struct flock64 FLOCK;
 #endif

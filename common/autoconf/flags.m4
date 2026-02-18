@@ -170,6 +170,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
       SET_SHARED_LIBRARY_MAPFILE=''
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xlinux.cygwin; then
+      # Cygwin doesn't support -z flag
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN[$]1'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=[$]1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=[$]1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -190,6 +197,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
       SET_SHARED_LIBRARY_MAPFILE=''
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xlinux.cygwin; then
+      # Cygwin doesn't support -z flag
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN[$]1'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=[$]1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=[$]1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -438,7 +452,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     LEGACY_TARGET_CFLAGS="$LEGACY_TARGET_CFLAGS -fstack-protector"
     LEGACY_HOST_CXXFLAGS="$LEGACY_HOST_CXXFLAGS -fstack-protector"
     LEGACY_TARGET_CXXFLAGS="$LEGACY_TARGET_CXXFLAGS -fstack-protector"
-    if test "x$OPENJDK_TARGET_OS" != xmacosx; then
+    # -z,relro is ELF-specific; skip for macOS and Cygwin (PE/COFF format)
+    if test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_OS_ENV" != "xlinux.cygwin"; then
       LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,relro"
       LEGACY_HOST_LDFLAGS="$LEGACY_HOST_LDFLAGS -Wl,-z,relro"
       LEGACY_TARGET_LDFLAGS="$LEGACY_TARGET_LDFLAGS -Wl,-z,relro"
@@ -755,10 +770,11 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       if test -n "$HAS_GNU_HASH"; then
         LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both "
       fi
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_OS_ENV" != "xlinux.cygwin"; then
         # And since we now know that the linker is gnu, then add:
         #   -z defs, to forbid undefined symbols in object files
         #   -z noexecstack, to mark stack regions as non-executable
+        # (Skip on Cygwin - ld doesn't support -z flag for PE/COFF)
         LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs -Xlinker -z -Xlinker noexecstack"
         if test "x$DEBUG_LEVEL" = "xrelease"; then
           # When building release libraries, tell the linker optimize them.

@@ -1319,7 +1319,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
         }
       } else {
         CompiledStaticCall* ssc = compiledStaticCall_before(caller_frame.pc());
-        if (ssc->is_clean()) ssc->set(static_call_info);
+        if (ssc != NULL && ssc->is_clean()) ssc->set(static_call_info);
       }
     }
 

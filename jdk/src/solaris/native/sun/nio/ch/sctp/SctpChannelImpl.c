@@ -500,7 +500,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
 #endif
             snp = (union sctp_notification *) bufp;
             if (handleNotification(env, fd, resultContainerObj, snp, rv,
-                                   (msg->msg_flags & MSG_EOR),
+                                   (jboolean)((msg->msg_flags & MSG_EOR) != 0),
                                    (struct sockaddr*)&sa ) == JNI_TRUE) {
                 /* We have received a notification that is of interest to
                    to the Java API. The appropriate notification will be
@@ -524,7 +524,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
     } while (msg->msg_flags & MSG_NOTIFICATION);
 
     handleMessage(env, resultContainerObj, msg, rv,
-            (msg->msg_flags & MSG_EOR), (struct sockaddr*)&sa);
+            (jboolean)((msg->msg_flags & MSG_EOR) != 0), (struct sockaddr*)&sa);
     return rv;
 }
 

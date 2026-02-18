@@ -29,6 +29,7 @@
 #include "jlong.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <dlfcn.h>
 
 #ifdef __solaris__

@@ -36,6 +36,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Cygwin doesn't define RTLD_NEXT - it's a GNU extension */
+#ifndef RTLD_NEXT
+#define RTLD_NEXT ((void *)-1)
+#endif
+
 #define bool int
 #define true 1
 #define false 0

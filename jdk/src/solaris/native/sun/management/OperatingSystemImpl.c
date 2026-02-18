@@ -41,12 +41,12 @@
 #include <sys/proc_info.h>
 #include <libproc.h>
 #endif
-#elif !defined(_AIX)
+#elif !defined(_AIX) && !defined(__CYGWIN__)
 #include <sys/swap.h>
 #endif
 #include <sys/resource.h>
 #include <sys/times.h>
-#ifndef _ALLBSD_SOURCE
+#if !defined(_ALLBSD_SOURCE) && !defined(__CYGWIN__)
 #include <sys/sysinfo.h>
 #endif
 #include <ctype.h>
@@ -63,7 +63,7 @@
 
 static jlong page_size = 0;
 
-#if defined(_ALLBSD_SOURCE) || defined(_AIX)
+#if defined(_ALLBSD_SOURCE) || defined(_AIX) || defined(__CYGWIN__)
 #define MB      (1024UL * 1024UL)
 #else
 
@@ -72,7 +72,7 @@ static jlong page_size = 0;
 #define _STRUCTURED_PROC 1
 #include <sys/procfs.h>
 
-#endif /* _ALLBSD_SOURCE */
+#endif /* _ALLBSD_SOURCE || _AIX || __CYGWIN__ */
 
 static struct dirent* read_dir(DIR* dirp, struct dirent* entry) {
 #ifdef __solaris__
@@ -462,7 +462,7 @@ Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount0
 #endif
 }
 
-#ifndef __linux__
+#if !defined(__linux__) && !defined(__CYGWIN__)
 JNIEXPORT jdouble JNICALL
 Java_sun_management_OperatingSystemImpl_getSingleCpuLoad0
   (JNIEnv *env, jobject mbean, jint cpu_number)

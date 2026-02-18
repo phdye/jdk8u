@@ -30,7 +30,22 @@
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#ifndef __CYGWIN__
 #include <netinet/ip_icmp.h>
+#else
+/* Cygwin ICMP compatibility definitions */
+#define ICMP_ECHO       8
+#define ICMP_ECHOREPLY  0
+#define ICMP_MINLEN     8
+struct icmp {
+    u_char  icmp_type;
+    u_char  icmp_code;
+    u_short icmp_cksum;
+    u_short icmp_id;
+    u_short icmp_seq;
+    char    icmp_data[1];
+};
+#endif
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>

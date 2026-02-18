@@ -43,7 +43,20 @@
 #include "jni_util.h"
 #include "net_util.h"
 #ifndef IPV6_DEFS_H
+#ifndef __CYGWIN__
 #include <netinet/icmp6.h>
+#else
+/* Cygwin ICMPv6 compatibility definitions */
+#define ICMP6_ECHO_REQUEST  128
+#define ICMP6_ECHO_REPLY    129
+struct icmp6_hdr {
+    uint8_t  icmp6_type;
+    uint8_t  icmp6_code;
+    uint16_t icmp6_cksum;
+    uint16_t icmp6_id;
+    uint16_t icmp6_seq;
+};
+#endif
 #endif
 
 #include "java_net_Inet4AddressImpl.h"

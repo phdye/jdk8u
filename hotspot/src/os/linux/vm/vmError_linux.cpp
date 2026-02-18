@@ -30,7 +30,9 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#ifndef __CYGWIN__
 #include <sys/syscall.h>
+#endif
 #include <unistd.h>
 #include <signal.h>
 

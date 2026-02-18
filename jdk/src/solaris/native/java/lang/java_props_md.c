@@ -462,7 +462,13 @@ GetJavaProperties(JNIEnv *env)
 #else
         struct utsname name;
         uname(&name);
+#ifdef __CYGWIN__
+        // Report as "Linux" for Java compatibility - all the Java platform
+        // code (DefaultFileSystemProvider, etc.) checks for "Linux" os.name.
+        sprops.os_name = strdup("Linux");
+#else
         sprops.os_name = strdup(name.sysname);
+#endif
 #ifdef _AIX
         {
             char *os_version = malloc(strlen(name.version) +

@@ -284,6 +284,8 @@ inline jlong Atomic::cmpxchg(jlong exchange_value,
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value,
                                     volatile intptr_t* dest,
                                     intptr_t compare_value) {
@@ -306,6 +308,7 @@ inline void* Atomic::cmpxchg_ptr(void* exchange_value,
                               (volatile intptr_t*) dest,
                               (intptr_t) compare_value);
 }
+#pragma GCC diagnostic pop
 
 inline jlong Atomic::load(volatile jlong* src) {
   volatile jlong dest;

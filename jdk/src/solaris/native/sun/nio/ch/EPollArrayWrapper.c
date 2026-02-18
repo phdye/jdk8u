@@ -32,6 +32,8 @@
 
 #include <unistd.h>
 #include <sys/time.h>
+
+#ifndef __CYGWIN__
 #include <sys/epoll.h>
 
 #define RESTARTABLE(_cmd, _result) do { \
@@ -158,3 +160,59 @@ Java_sun_nio_ch_EPollArrayWrapper_interrupt(JNIEnv *env, jobject this, jint fd)
         JNU_ThrowIOExceptionWithLastError(env,"write to interrupt fd failed");
     }
 }
+
+#else /* __CYGWIN__ - epoll not available, provide stubs */
+
+#include <errno.h>
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_init(JNIEnv *env, jclass this)
+{
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_epollCreate(JNIEnv *env, jobject this)
+{
+    JNU_ThrowIOException(env, "epoll not supported on Cygwin");
+    return -1;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_sizeofEPollEvent(JNIEnv* env, jclass this)
+{
+    return 12; /* approximate size */
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_offsetofData(JNIEnv* env, jclass this)
+{
+    return 4; /* approximate offset */
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_epollCtl(JNIEnv *env, jobject this, jint epfd,
+                                           jint opcode, jint fd, jint events)
+{
+    JNU_ThrowIOException(env, "epoll not supported on Cygwin");
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_epollWait(JNIEnv *env, jobject this,
+                                            jlong address, jint numfds,
+                                            jlong timeout, jint epfd)
+{
+    JNU_ThrowIOException(env, "epoll not supported on Cygwin");
+    return -1;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_interrupt(JNIEnv *env, jobject this, jint fd)
+{
+    int fakebuf[1];
+    fakebuf[0] = 1;
+    if (write(fd, fakebuf, 1) < 0) {
+        JNU_ThrowIOExceptionWithLastError(env,"write to interrupt fd failed");
+    }
+}
+
+#endif /* __CYGWIN__ */

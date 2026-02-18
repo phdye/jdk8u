@@ -240,8 +240,13 @@ endif # JDK_6_OR_EARLIER
 
 JDK_INCLUDE_SUBDIR=linux
 
-# Library suffix
+# Library suffix - Cygwin uses .dll instead of .so
+_IS_CYGWIN := $(findstring CYGWIN,$(shell uname -s))
+ifeq ($(_IS_CYGWIN),)
 LIBRARY_SUFFIX=so
+else
+LIBRARY_SUFFIX=dll
+endif
 
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 

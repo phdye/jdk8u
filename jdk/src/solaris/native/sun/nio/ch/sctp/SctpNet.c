@@ -585,7 +585,7 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_sctp_SctpNet_getIntOption0
 JNIEXPORT jobject JNICALL Java_sun_nio_ch_sctp_SctpNet_getPrimAddrOption0
   (JNIEnv *env, jclass klass, jint fd, jint assocId) {
     struct sctp_setprim prim;
-    unsigned int prim_len = sizeof(prim);
+    socklen_t prim_len = sizeof(prim);
     struct sockaddr* sap = (struct sockaddr*)&prim.ssp_addr;
 
     prim.ssp_assoc_id = assocId;
@@ -657,7 +657,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setPeerPrimAddrOption0
 JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_getInitMsgOption0
   (JNIEnv *env, jclass klass, jint fd, jintArray retVal) {
     struct sctp_initmsg sctp_initmsg;
-    unsigned int sim_len = sizeof(sctp_initmsg);
+    socklen_t sim_len = sizeof(sctp_initmsg);
     int vals[2];
 
     if (getsockopt(fd, IPPROTO_SCTP, SCTP_INITMSG, &sctp_initmsg,

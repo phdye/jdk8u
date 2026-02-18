@@ -73,7 +73,8 @@ FD handleOpen(const char *path, int oflag, int mode);
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 
-#ifdef _ALLBSD_SOURCE
+#if defined(_ALLBSD_SOURCE) || defined(__CYGWIN__)
+/* Cygwin and BSD have 64-bit off_t by default */
 #define open64 open
 #define fstat64 fstat
 #define stat64 stat
