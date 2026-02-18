@@ -498,7 +498,8 @@ define SetupNativeCompilation
             $$($1_DEBUGINFO_FILES): $$($1_TARGET)
 		$(RM) $$@
 		$(OBJCOPY) --only-keep-debug $$< $$@
-		$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
+		# Cygwin's objcopy places .gnu_debuglink section at invalid VMA, causing DLL load failure
+		$(if $(findstring cygwin,$(OPENJDK_BUILD_OS_ENV)),,$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<)
 		$(TOUCH) $$@
           endif
         else ifeq ($(OPENJDK_TARGET_OS), aix)
