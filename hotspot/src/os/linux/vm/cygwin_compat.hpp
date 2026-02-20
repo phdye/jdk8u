@@ -109,9 +109,30 @@ typedef off_t off64_t;
 #include <pthread.h>
 #include <windows.h>
 
-/* Undefine MAX_PATH from windows.h - os_linux.cpp defines its own */
+/* Undefine problematic macros from windows.h that conflict with HotSpot code */
 #ifdef MAX_PATH
 #undef MAX_PATH
+#endif
+
+/* COM headers define 'interface' as 'struct', breaks C++ code using 'interface' as variable */
+#ifdef interface
+#undef interface
+#endif
+
+/* Other common Windows macro conflicts */
+#ifdef small
+#undef small
+#endif
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
+/* Windows print dialog defines INTERFACE macro, conflicts with port.hpp */
+#ifdef INTERFACE
+#undef INTERFACE
 #endif
 
 /*

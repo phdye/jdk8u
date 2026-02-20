@@ -84,6 +84,9 @@ class ThreadLocalStorage : AllStatic {
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "threadLS_bsd_zero.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "threadLS_cygwin_x86.hpp"
+#endif
 
 #ifndef SOLARIS
  public:

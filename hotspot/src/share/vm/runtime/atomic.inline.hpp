@@ -73,4 +73,9 @@
 # include "atomic_bsd_zero.inline.hpp"
 #endif
 
+// Cygwin
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "atomic_cygwin_x86.inline.hpp"
+#endif
+
 #endif // SHARE_VM_RUNTIME_ATOMIC_INLINE_HPP

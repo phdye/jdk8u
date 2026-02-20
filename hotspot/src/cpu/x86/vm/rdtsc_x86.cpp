@@ -37,6 +37,9 @@
 #ifdef TARGET_OS_ARCH_solaris_x86
 # include "os_solaris_x86.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "os_cygwin_x86.inline.hpp"
+#endif
 
 #include "rdtsc_x86.hpp"
 #include "runtime/thread.inline.hpp"

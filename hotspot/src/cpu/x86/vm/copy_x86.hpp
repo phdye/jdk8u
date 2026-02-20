@@ -40,6 +40,9 @@
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "copy_bsd_x86.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "copy_cygwin_x86.inline.hpp"
+#endif
 
 
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {

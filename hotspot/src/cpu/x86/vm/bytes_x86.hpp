@@ -84,6 +84,9 @@ class Bytes: AllStatic {
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "bytes_bsd_x86.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "bytes_cygwin_x86.inline.hpp"
+#endif
 
 
 #endif // CPU_X86_VM_BYTES_X86_HPP

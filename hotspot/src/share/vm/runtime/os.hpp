@@ -33,6 +33,9 @@
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
 # include <setjmp.h>
+# ifdef __CYGWIN__
+#  include "cygwin_compat.hpp"
+# endif
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
 # include "jvm_solaris.h"
@@ -889,6 +892,9 @@ class os: AllStatic {
 #endif
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "os_bsd_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "os_cygwin_x86.hpp"
 #endif
 
  public:

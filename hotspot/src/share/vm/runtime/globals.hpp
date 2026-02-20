@@ -106,6 +106,9 @@
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "globals_bsd_zero.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "globals_cygwin_x86.hpp"
+#endif
 #ifdef COMPILER1
 #ifdef TARGET_ARCH_x86
 # include "c1_globals_x86.hpp"

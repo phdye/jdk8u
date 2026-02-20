@@ -25,9 +25,8 @@
 #ifndef OS_LINUX_VM_OS_LINUX_HPP
 #define OS_LINUX_VM_OS_LINUX_HPP
 
-#ifdef __CYGWIN__
-#include "cygwin_compat.hpp"
-#endif
+// Note: cygwin_compat.hpp is now included from os.hpp (before the os class)
+// to avoid system header conflicts when included inside class scope.
 
 // Linux_OS defines the interface to Linux operating systems
 

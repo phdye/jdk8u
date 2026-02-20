@@ -64,13 +64,26 @@ include $(GAMMADIR)/make/altsrc.make
 # 'gmake MAKE_VERBOSE=y' or 'gmake QUIETLY=' gives all the gory details.
 QUIETLY$(MAKE_VERBOSE)	= @
 
+# Detect Cygwin
+_IS_CYGWIN := $(findstring CYGWIN,$(shell uname -s))
+
+# Default OS_CPU_FAMILY to OS_FAMILY
+OS_CPU_FAMILY = $(OS_FAMILY)
+
 ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   PLATFORM_FILE = $(shell dirname $(shell dirname $(shell pwd)))/platform_zero
+  # Zero builds use linux_zero, not cygwin_zero
 else
   ifdef USE_SUNCC
     PLATFORM_FILE = $(GAMMADIR)/make/$(OS_FAMILY)/platform_$(BUILDARCH).suncc
   else
-    PLATFORM_FILE = $(GAMMADIR)/make/$(OS_FAMILY)/platform_$(BUILDARCH)
+    # Cygwin JIT builds use cygwin_x86 os_cpu directory
+    ifneq ($(_IS_CYGWIN),)
+      OS_CPU_FAMILY = cygwin
+      PLATFORM_FILE = $(GAMMADIR)/make/$(OS_FAMILY)/platform_$(BUILDARCH).cygwin
+    else
+      PLATFORM_FILE = $(GAMMADIR)/make/$(OS_FAMILY)/platform_$(BUILDARCH)
+    endif
     ALT_PLATFORM_FILE = $(HS_ALT_MAKE)/$(OS_FAMILY)/platform_$(BUILDARCH)
     PLATFORM_FILE := $(if $(wildcard $(ALT_PLATFORM_FILE)),$(ALT_PLATFORM_FILE),$(PLATFORM_FILE))
   endif
@@ -253,8 +266,8 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	sed 's/$$/ \\/;s|$(GAMMADIR)|$$(GAMMADIR)|' ../shared_dirs.lst; \
 	echo "$(call gamma-path,altsrc,cpu/$(SRCARCH)/vm) \\"; \
 	echo "$(call gamma-path,commonsrc,cpu/$(SRCARCH)/vm) \\"; \
-	echo "$(call gamma-path,altsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
-	echo "$(call gamma-path,commonsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os_cpu/$(OS_CPU_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os_cpu/$(OS_CPU_FAMILY)_$(SRCARCH)/vm) \\"; \
 	echo "$(call gamma-path,altsrc,os/$(OS_FAMILY)/vm) \\"; \
 	echo "$(call gamma-path,commonsrc,os/$(OS_FAMILY)/vm) \\"; \
 	echo "$(call gamma-path,altsrc,os/posix/vm) \\"; \
@@ -269,8 +282,8 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "$(call gamma-path,commonsrc,share/vm/precompiled) \\"; \
 	echo "$(call gamma-path,altsrc,cpu/$(SRCARCH)/vm) \\"; \
 	echo "$(call gamma-path,commonsrc,cpu/$(SRCARCH)/vm) \\"; \
-	echo "$(call gamma-path,altsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
-	echo "$(call gamma-path,commonsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os_cpu/$(OS_CPU_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os_cpu/$(OS_CPU_FAMILY)_$(SRCARCH)/vm) \\"; \
 	echo "$(call gamma-path,altsrc,os/$(OS_FAMILY)/vm) \\"; \
 	echo "$(call gamma-path,commonsrc,os/$(OS_FAMILY)/vm) \\"; \
 	echo "$(call gamma-path,altsrc,os/posix/vm) \\"; \

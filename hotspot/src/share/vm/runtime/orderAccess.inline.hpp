@@ -73,5 +73,8 @@
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "orderAccess_bsd_zero.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_cygwin_x86
+# include "orderAccess_cygwin_x86.inline.hpp"
+#endif
 
 #endif // SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP
