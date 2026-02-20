@@ -256,11 +256,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x6);
     __ jccb(Assembler::notEqual, sef_cpuid); // jump if AVX is not supported
 
+#ifndef __CYGWIN__
     //
     // Some OSs have a bug when upper 128bits of YMM
     // registers are not restored after a signal processing.
     // Generate SEGV here (reference through NULL)
     // and check upper YMM bits after it.
+    //
+    // NOTE: Cygwin doesn't support modifying PC in ucontext from signal
+    // handlers, so this SIGSEGV-based probing would hang. Skip on Cygwin
+    // and assume AVX save/restore doesn't work (ymm_save stays zeroed,
+    // so os_supports_avx_vectors() returns false).
     //
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
     intx saved_useavx = UseAVX;
@@ -298,6 +304,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
     UseSSE = saved_usesse;
+#endif // !__CYGWIN__
 
     //
     // cpuid(0x7) Structured Extended Features

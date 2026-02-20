@@ -70,11 +70,14 @@ ifneq ($(BUILD_FLAVOR), debug)
 endif
 
 # if $(AGENT_DIR) does not exist, we don't build SA
-# also, we don't build SA on Itanium or zero.
+# also, we don't build SA on Itanium, zero, or Cygwin.
+# Cygwin lacks Linux debugging interfaces (ptrace, thread_db) required by SA.
 
 ifneq ($(wildcard $(AGENT_DIR)),)
 ifneq ($(filter-out ia64 zero,$(SRCARCH)),)
+ifeq ($(_IS_CYGWIN),)
   BUILDLIBSAPROC = $(LIBSAPROC)
+endif
 endif
 endif
 

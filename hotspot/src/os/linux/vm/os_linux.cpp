@@ -2606,10 +2606,12 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-class Semaphore : public StackObj {
+// Anonymous namespace to avoid collision with global Semaphore class (Cygwin)
+namespace {
+class SRSemaphore : public StackObj {
   public:
-    Semaphore();
-    ~Semaphore();
+    SRSemaphore();
+    ~SRSemaphore();
     void signal();
     void wait();
     bool trywait();
@@ -2618,27 +2620,27 @@ class Semaphore : public StackObj {
     sem_t _semaphore;
 };
 
-Semaphore::Semaphore() {
+SRSemaphore::SRSemaphore() {
   sem_init(&_semaphore, 0, 0);
 }
 
-Semaphore::~Semaphore() {
+SRSemaphore::~SRSemaphore() {
   sem_destroy(&_semaphore);
 }
 
-void Semaphore::signal() {
+void SRSemaphore::signal() {
   sem_post(&_semaphore);
 }
 
-void Semaphore::wait() {
+void SRSemaphore::wait() {
   sem_wait(&_semaphore);
 }
 
-bool Semaphore::trywait() {
+bool __attribute__((unused)) SRSemaphore::trywait() {
   return sem_trywait(&_semaphore) == 0;
 }
 
-bool Semaphore::timedwait(unsigned int sec, int nsec) {
+bool SRSemaphore::timedwait(unsigned int sec, int nsec) {
 
   struct timespec ts;
   // Semaphore's are always associated with CLOCK_REALTIME
@@ -2669,6 +2671,7 @@ bool Semaphore::timedwait(unsigned int sec, int nsec) {
     }
   }
 }
+} // anonymous namespace
 
 extern "C" {
   typedef void (*sa_handler_t)(int);
@@ -2709,7 +2712,7 @@ static volatile jint pending_signals[NSIG+1] = { 0 };
 
 // Linux(POSIX) specific hand shaking semaphore.
 static sem_t sig_sem;
-static Semaphore sr_semaphore;
+static SRSemaphore sr_semaphore;
 
 void os::signal_init_pd() {
   // Initialize signal structures

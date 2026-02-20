@@ -48,6 +48,9 @@ else
   ARCH_DATA_MODEL ?= 32
 endif
 
+# Detect Cygwin early for platform decisions
+_IS_CYGWIN := $(findstring CYGWIN,$(shell uname -s))
+
 # zero
 ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   ifeq ($(ARCH_DATA_MODEL), 64)
@@ -89,11 +92,20 @@ ifneq (,$(findstring $(ARCH), amd64 x86_64 i686 i586))
     ARCH_DATA_MODEL = 64
     MAKE_ARGS       += LP64=1
     PLATFORM        = linux-amd64
-    VM_PLATFORM     = linux_amd64
+    # Cygwin JIT builds use cygwin_amd64 output directory
+    ifeq ($(_IS_CYGWIN),CYGWIN)
+      VM_PLATFORM   = cygwin_amd64
+    else
+      VM_PLATFORM   = linux_amd64
+    endif
   else
     ARCH_DATA_MODEL = 32
     PLATFORM        = linux-i586
-    VM_PLATFORM     = linux_i486
+    ifeq ($(_IS_CYGWIN),CYGWIN)
+      VM_PLATFORM   = cygwin_i486
+    else
+      VM_PLATFORM   = linux_i486
+    endif
   endif
   HS_ARCH           = x86
 endif
@@ -333,6 +345,10 @@ ADD_SA_BINARIES/ppc   =
 ADD_SA_BINARIES/ia64  =
 ADD_SA_BINARIES/arm   =
 ADD_SA_BINARIES/zero  =
+# No SA support on Cygwin (lacks ptrace, thread_db)
+ifneq ($(_IS_CYGWIN),)
+ADD_SA_BINARIES/x86   =
+endif
 
 -include $(HS_ALT_MAKE)/linux/makefiles/defs.make
 
